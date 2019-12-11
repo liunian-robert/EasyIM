@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easyim.system.mapper.SysGroupMapper">
+
+    <resultMap type="SysGroup" id="SysGroupResult">
+        <id     property="id"      column="id"                  />
+        <result property="groupname"    column="groupname"      />
+        <result property="belong"     column="belong"           />
+        <result property="avatar"   column="avatar"             />
+        <result property="des"    column="des"                  />
+        <result property="status"      column="status"          />
+        <result property="number"    column="number"            />
+        <result property="timestamp"      column="timestamp"    />
+    </resultMap>
+
+    <sql id="selectGroupVo">
+        select id, groupname, belong, avatar, des, status, number, timestamp from sys_group
+    </sql>
+
+    <select id="selectSysGroupByUserId" parameterType="String" resultMap="SysGroupResult">
+        select g.id, g.groupname, g.belong, g.avatar, g.des, g.status, g.number, g.timestamp from sys_group g left join sys_group_member gm on g.id=gm.groupid
+        where gm.userid=#{userid}
+    </select>
+
+    <select id="findSysGroup" resultMap="SysGroupResult">
+        select id, groupname, belong, avatar, des, status, number, timestamp from sys_group
+        where id not in (select groupid from sys_group_member where userid =#{userid})
+        <if test="condition !=null and condition!=''">
+          and groupname like concat('%', #{condition}, '%')
+        </if>
+    </select>
+
+
+    <select id="getSysGroupById" resultMap="SysGroupResult">
+        select id, groupname, belong, avatar, des, status, number, timestamp from sys_group
+        where id =#{id}
+    </select>
+
+    <update id="deleteGroupById">
+        delete from sys_group where id=#{id}
+    </update>
+
+    <insert id="saveSysGroup" parameterType="SysGroup">
+        insert into sys_group (
+        <if test="id != null and id != ''">id,</if>
+        <if test="groupname != null and groupname != ''">groupname,</if>
+        <if test="belong != null and belong != ''">belong,</if>
+        <if test="avatar != null and avatar != ''">avatar,</if>
+        <if test="des != null">des,</if>
+        <if test="`status` != null and `status` != ''">status,</if>
+        <if test="`number` != null and `number` != '0'">`number`,</if>
+        <if test="`timestamp` != null and `timestamp` != 0">`timestamp`</if>
+        ) values (
+        <if test="id != null and id != ''">#{id},</if>
+        <if test="groupname != null and groupname != ''">#{groupname},</if>
+        <if test="belong != null and belong != ''">#{belong},</if>
+        <if test="avatar != null and avatar != ''">#{avatar},</if>
+        <if test="des != null">#{des},</if>
+        <if test="`status` != null and `status` != ''">#{status},</if>
+        <if test="`number` != null and `number` != 0">#{number},</if>
+        <if test="`timestamp` != null and `timestamp` != 0">#{timestamp}</if>
+        )
+    </insert>
+</mapper>

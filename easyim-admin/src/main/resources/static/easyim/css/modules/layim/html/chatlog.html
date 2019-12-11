@@ -1,0 +1,99 @@
+ 
+ 
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>聊天记录</title>
+
+<link rel="stylesheet" href="/easyim/css/layui.css" />
+<style>
+body .layim-chat-main{height: auto;padding-bottom: 45px;}
+.lay_page{position: fixed;bottom: 0;margin: 0 10px;background: #fff;width: 100%;}
+.layui-laypage{width: 105px;margin:0 auto;display: block}
+</style>
+</head>
+<body>
+
+<div class="layim-chat-main">
+  <ul id="LAY_view"></ul>
+</div>
+
+<div class="lay_page" id="LAY_page" ></div>
+
+<div id="LAY_page" style="margin: 0 10px;"></div>
+
+
+<textarea title="聊天记录" id="LAY_tpl" style="display:none;">
+{{# layui.each(d.data, function(index, item){
+  if(item.id == parent.layui.layim.cache().mine.id){ }}
+    <li class="layim-chat-mine"><div class="layim-chat-user"><img src="{{ item.avatar }}"><cite><i>{{ layui.data.date(item.timestamp) }}</i>{{ item.username }}</cite></div><div class="layim-chat-text">{{ layui.layim.content(item.content) }}</div></li>
+  {{# } else { }}
+    <li><div class="layim-chat-user"><img src="{{ item.avatar }}"><cite>{{ item.username }}<i>{{ layui.data.date(item.timestamp) }}</i></cite></div><div class="layim-chat-text">{{ layui.layim.content(item.content) }}</div></li>
+  {{# }
+}); }}
+</textarea>
+
+<!-- 
+上述采用了 laytpl 语法，
+
+-->
+
+
+<script src="/easyim/layui.js"></script>
+<script>
+layui.use(['layim', 'laypage'], function(){
+  var layim = layui.layim
+  ,layer = layui.layer
+  ,laytpl = layui.laytpl
+  ,$ = layui.jquery
+  ,laypage = layui.laypage;
+  
+  //聊天记录的分页此处不做演示，你可以采用laypage，不了解的同学见文档：http://www.layui.com/doc/modules/laypage.html
+  
+  
+  //开始请求聊天记录
+  var param =  location.search //获得URL参数。该窗口url会携带会话id和type，他们是你请求聊天记录的重要凭据
+  
+  var data;
+  
+  chatRecord(1);
+  
+  function chatRecord(pageNo){
+	  $.ajax({
+		  url:"/message/chat/record"+param+"&time="+new Date().getTime()+"&pageNum="+pageNo+"&pageSize=20",
+		  cache:false,
+		  async:false,
+		  success:function(res){
+			  if(res.code==0){
+				  data=res.data.records;
+			  }else{
+				  layer.msg("获取消息记录失败");
+			  }		 
+		  }
+	  });
+  }
+
+  
+  laypage.render({
+	    elem: 'LAY_page' //注意，这里的 test1 是 ID，不用加 # 号
+	    ,count: data.totalRow //数据总数，从服务端得到
+	    ,prev: '<i class="layui-icon">&#58970;</i>'
+	    ,next: '<i class="layui-icon">&#xe65b;</i>'
+	    ,layout: ['prev', 'next']
+	    ,limit:data.pageSize
+	    ,jump: function(obj, first){      
+	        chatRecord(obj.curr);
+	        var html = laytpl(LAY_tpl.value).render({
+	    	    data:data.list
+	    	  });
+	    	  $('#LAY_view').html(html); 
+	      }
+	  });
+  
+  
+});
+</script>
+</body>
+</html>

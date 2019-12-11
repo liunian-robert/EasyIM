@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easyim.system.mapper.SysGroupMemberMapper">
+
+    <resultMap type="SysGroupMember" id="SysGroupMemberResult">
+        <id     property="id"      column="id"                  />
+        <result property="groupid"    column="groupid"          />
+        <result property="userid"     column="userid"           />
+        <result property="remark"   column="remark"             />
+        <result property="timestamp"    column="timestamp"      />
+        <result property="status"      column="status"          />
+        <result property="type"    column="type"                />
+    </resultMap>
+
+    <select id="findSysGroupMember" resultMap="SysGroupMemberResult">
+        select id, groupid, userid, remark, `timestamp`, status, `type` from sys_group_member
+        where groupid =#{groupid}
+    </select>
+
+    <select id="getSysGroupMemberByUserId" resultMap="SysGroupMemberResult">
+        select id, groupid, userid, remark, `timestamp`, status, `type` from sys_group_member
+        where groupid =#{groupid} and userid=#{userid}
+    </select>
+
+    <update id="modifyGroupRemark">
+      update sys_group_member set remark=#{remark} where groupid=#{groupid} and userid=#{userid}
+    </update>
+
+
+    <update id="deleteGroupMemberById">
+      delete from sys_group_member where id=#{id}
+    </update>
+
+    <insert id="saveSysGroupMember" parameterType="SysGroupMember">
+        insert into sys_group_member(
+        <if test="id != null and id != ''">id,</if>
+        <if test="groupid != null and groupid != ''">groupid,</if>
+        <if test="userid != null and userid != ''">userid,</if>
+        <if test="remark != null and remark != ''">remark,</if>
+        <if test="timestamp != null and timestamp != 0">timestamp,</if>
+        <if test="status != null">status,</if>
+        <if test="type != null">type</if>
+        ) values (
+        <if test="id != null and id != ''">#{id},</if>
+        <if test="groupid != null and groupid != ''">#{groupid},</if>
+        <if test="userid != null and userid != ''">#{userid},</if>
+        <if test="remark != null and remark != ''">#{remark},</if>
+        <if test="timestamp != null and timestamp != ''">#{timestamp},</if>
+        <if test="status != null">#{status},</if>
+        <if test="type != null">#{type}</if>
+        )
+    </insert>
+</mapper>

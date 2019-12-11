@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html  lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="renderer" content="webkit">
+    <title>EasyIM系统首页</title>
+    <!--[if lt IE 9]>
+    <meta http-equiv="refresh" content="0;ie.html"/>
+    <![endif]-->
+    <link th:href="@{favicon.ico}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/easyim/css/contextMenu.css}" rel="stylesheet"/>
+	<link th:href="@{/css/jquery.contextMenu.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/font-awesome.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/animate.css}" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <link th:href="@{/css/skins.css}" rel="stylesheet"/>
+    <link th:href="@{/emessage/css/ry-ui.css?v=4.1.0}" rel="stylesheet"/>
+	<link rel="stylesheet" th:href="@{/easyim/css/layui.css}"/>
+</head>
+<body class="fixed-sidebar full-height-layout gray-bg" style="overflow: hidden">
+<script th:src="@{/easyim/js/jquery.js}"></script>
+<script th:src="@{/js/jquery.base64.js}"></script>
+<script th:src="@{/easyim/layui.js}"></script>
+<script th:src="@{/easyim/js/contextMenu.js}"></script>
+<script th:src="@{/js/EventSource.js}"></script>
+<script th:src="@{/js/NchanSubscriber.js}" charset="UTF-8"></script>
+<script charset="UTF-8">
+    layui.use(['jquery','layer','layim'], function(layim){
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var layim = layui.layim;
+        var opt = {
+            subscriber : 'websocket',
+            reconnect : undefined,
+            shared : undefined
+        }
+        var account = "[[${user.userId}]]";
+        var sub = new NchanSubscriber("[[${user.subServer}]]" + account, opt);
+        sub.on("message", function(message, message_metadata) {
+            var res = JSON.parse(message);
+            if(res.type==1){
+                if (res.data.type=="friend") {
+                    if($("#"+res.data.fromid)){
+                        $.get("/message/user/info",{id:res.data.fromid},function(data){
+                            if(data.code==0){
+                                if(data.data.user.sign==null){
+                                    data.data.user.sign='';
+                                }
+                                if(data.data.user.status=="online"){
+                                    layim.setChatStatus('<span style="color:#3FDD86;" id="'+res.data.fromid+'">[在线]</span>'+data.data.user.sign+''); //标注好友在线状态
+                                }else if(data.data.user.status=="hide" || data.data.user.status=="offline"){
+                                    layim.setFriendStatus(data.data.user.id, 'offline');
+                                    layim.setChatStatus('<span style="color:#FF5722;" id="'+res.data.id+'">[离线]</span>'+data.data.user.sign+'');
+                                }
+                            }else{
+                                layer.msg(data.msg);
+                            }
+                        });
+                    }
+                }
+                layim.getMessage(res.data);
+            }
+
+            if(res.data.type==5){
+                if($("#"+res.data.user.id)){
+                    $("#"+res.data.user.id).attr("style","color:#3FDD86;");
+                    $("#"+res.data.user.id).text("[在线]");
+                }
+                layim.setFriendStatus(res.data.user.id, 'online');
+                layer.msg(res.data.user.username+"上线了");
+            }
+
+            if(res.data.type==6){
+                layim.setFriendStatus(res.data.user.id, 'offline');
+                if($("#"+res.data.user.id)){
+                    $("#"+res.data.user.id).attr("style","color:#FF5722;");
+                    $("#"+res.data.user.id).text("[离线]");
+                }
+                layer.msg(res.data.user.username+"下线了");
+            }
+
+            if(res.data.type==7){
+                if(res.data.msgbox!=0){
+                    layim.msgbox(res.data.msgbox);
+                }
+            }
+            //新添加的好友必须刷新才可以绑定右键事件
+            if(res.data.type==9){
+             	if (res.data.user.avatar==null || res.data.user.avatar=="") {
+                    res.data.user.avatar="/easyim/images/default.jpg"
+             	}
+                layim.addList({
+                    type: 'friend'
+                    ,avatar: res.data.user.avatar
+                    ,username: res.data.user.username
+                    ,groupid: res.data.groupid
+                    ,id:res.data.user.id
+                    ,sign: res.data.user.sign
+                });
+                layer.msg(res.data.user.username+"已同意您的好友申请");
+            }
+
+            //删除好友
+            if(res.data.type==8){
+                layim.removeList({
+                    type: 'friend' //或者group
+                    ,id: res.data.user.id //好友或者群组ID
+                });
+            }
+
+            if(res.data.type==10){
+                $.get("/message/group/info",{"id":res.data.notify.groupid},function(data){
+                    if (res.data.group.avatar==null || res.data.group.avatar=="") {
+                        res.data.group.avatar="/easyim/images/default.jpg"
+                    }
+                    layer.msg("您已成功加入《"+data.data.group.groupname+"》群组");
+                    layim.addList({
+                        type: 'group'
+                        ,avatar: data.data.group.avatar
+                        ,groupname: data.data.group.groupname
+                        ,id:data.data.group.id
+                    });
+                });
+            }
+            if(res.data.type==11){
+                if($("#"+res.data.user.id)){
+                    $.get("/message/user/info",{id:res.data.user.id},function(data){
+                        if(data.code==0){
+                            if(data.data.user.status=="online"){
+                                layim.setChatStatus('<span style="color:#FA0803;" id="'+data.data.user.id+'">[对方正在输入...]</span>'+data.data.user.sign+''); //标注好友在线状态
+                            }
+                        }else{
+                            layer.msg(data.msg);
+                        }
+                    });
+                }
+            }
+            if(res.data.type==12){
+                layim.getMessage(res.data.msg);
+            }
+            if(res.data.type==13){//撤回消息
+                var cid = res.data.cid;
+                var id = res.data.id;
+                var chat = res.data.data;
+                var cache =  layui.layim.cache();
+                var local = layui.data('layim')[cache.mine.id];   //获取当前用户本地数据
+				console.log(local);
+                var chatIndex = null;
+                var friendchat = null;
+                if (chat.type=="friend") {
+                    chatIndex=chat.type+chat.fromid;
+                    friendchat = local.chatlog[chatIndex];
+                    console.log(friendchat);
+                    var array=[];
+                    if (friendchat != undefined && friendchat!= null) {
+                        for(var key in friendchat){
+                            if(!friendchat.hasOwnProperty(key)){
+                                continue;
+                            }
+                            if(friendchat[key].cid!=cid){
+                                array.push(friendchat[key]);
+                            }
+                        }
+                        local.chatlog[chatIndex]=array;
+                        //向localStorage同步数据
+                        layui.data('layim', {
+                            key: cache.mine.id
+                            ,value: local
+                        });
+                    }
+                    $(".layim-chat-main li[data-cid='"+cid+"']").remove();
+                    layim.getMessage({
+                        system: true //系统消息
+                        ,id: chat.fromid //聊天窗口ID
+                        ,type: "friend" //聊天窗口类型
+                        ,content: '对方撤回了一条消息'
+                    });
+                }
+                if (chat.type=="group") {
+                    chatIndex=chat.type+chat.to_groupid;
+                    friendchat = local.chatlog[chatIndex];
+                    console.log(friendchat);
+                    var array=[];
+                    if (friendchat != undefined && friendchat!= null) {
+                        for(var key in friendchat){
+                            if(!friendchat.hasOwnProperty(key)){
+                                continue;
+                            }
+                            if(friendchat[key].cid!=cid){
+                                array.push(friendchat[key]);
+                            }
+                        }
+                        local.chatlog[chatIndex]=array;
+                        //向localStorage同步数据
+                        layui.data('layim', {
+                            key: cache.mine.id
+                            ,value: local
+                        });
+                    }
+                    $.get("/message/user/info",{id:chat.fromid},function(data){
+                        if(data.code==0){
+                            $(".layim-chat-main li[data-cid='"+cid+"']").remove();
+                            layim.getMessage({
+                                system: true //系统消息
+                                ,id: chat.to_groupid //聊天窗口ID
+                                ,type: "group" //聊天窗口类型
+                                ,content: data.data.user.username+'撤回了一条消息'
+                            });
+                        }
+                    });
+                }
+            }
+        });
+
+        sub.on('connect', function(evt) {
+            $.get("/message/user/online",{'time':new Date().getTime()},function(res) {
+                layim.config({
+
+                    init: {
+                        url: '/message/init',
+                        type: 'get'
+                    },//获取主面板列表信息，下文会做进一步介绍
+
+                    //获取群员接口（返回的数据格式见下文）
+                    members: {
+                        url: '/message/group/members', //接口地址（返回的数据格式见下文）
+                        type: 'get' //默认get，一般可不填
+                    },
+
+                    //上传图片接口（返回的数据格式见下文），若不开启图片上传，剔除该项即可
+                    uploadImage: {
+                        url: '/common/upload', //接口地址
+                        type: 'post' //默认post
+                    },
+
+                    //上传文件接口（返回的数据格式见下文），若不开启文件上传，剔除该项即可
+                    uploadFile: {
+                        url: '/common/upload', //接口地址
+                        type: 'post' //默认post
+                    },
+                    //扩展工具栏，下文会做进一步介绍（如果无需扩展，剔除该项即可）
+                    tool: [{
+                        alias: 'code' //工具别名
+                        , title: '代码' //工具名称
+                        , icon: '&#xe64e;' //工具图标，参考图标文档
+                    }],
+                    brief: false,//是否简约模式，如果设为 true，则主面板不会显示。一般可用于客服
+                    title: "我的EasyIM",//主面板最小化后显示的名称
+                    min: false,//用于设定主面板是否在页面打开时，始终最小化展现
+                    right: "0px",//用于设定主面板右偏移量。该参数可避免遮盖你页面右下角已经的bar
+                    minRight: "",//用户控制聊天面板最小化时、及新消息提示层的相对right的px坐标。如：minRight: '200px'
+                    initSkin: "",//设置初始背景，默认不开启。可设置./css/modules/layim/skin目录下的图片文件名如：initSkin: '5.jpg'
+                    isAudio: true,//是否开启聊天工具栏音频
+                    isVideo: true,//是否开启开启聊天工具栏视频
+                    notice: true,//是否开启桌面消息提醒，即在浏览器之外的提醒
+                    voice: "default.mp3",//设定消息提醒的声音文件（所在目录：./layui/css/modules/layim/voice/）若不开启，设置 false 即可
+                    isfriend: true,//是否开启好友
+                    isgroup: true,//是否开启群组
+                    maxLength: 3000,
+                    copyright: true,
+                    msgbox: layui.cache.dir + 'css/modules/layim/html/msgbox.html', //消息盒子页面地址，若不开启，剔除该项即可
+                    find: layui.cache.dir + 'css/modules/layim/html/find.html', //发现页面地址，若不开启，剔除该项即可
+                    chatLog: layui.cache.dir + 'css/modules/layim/html/chatlog.html', //聊天记录页面地址，若不开启，剔除该项即可
+                    createGroup: layui.cache.dir + 'css/modules/layim/html/createGroup.html', //创建群页面地址，若不开启，剔除该项即可
+                    Information: layui.cache.dir + 'css/modules/layim/html/getInformation.html' //好友群资料页面
+                });
+            });
+        });
+
+        sub.on('disconnect', function(evt) {
+        });
+        sub.on('error', function(code, message) {
+        });
+        sub.start();
+        //基础配置
+        layim.on('ready', function(options){
+            var targetIndex = 0;
+            var targetObj;
+            $(".layim-list-friend >li>h5").rightMenu({
+                width: 140, // width
+                itemHeight: 30, // 菜单项height
+                bgColor: "#fff", // 背景颜色
+                color: "#333", // 字体颜色
+                fontSize: 15, // 字体大小
+                hoverBgColor: "#009bdd", // hover背景颜色
+                hoverColor: "#fff", // hover背景颜色
+                target: function(ele) { // 当前元素
+                    targetObj = ele.parent();
+                },
+                menu: [
+                    { // 菜单项
+                        text: "新建分组",
+                        icon: "&#xe654",
+                        callback: function(ele) {
+                            layer.prompt({title: '新建分组', formType: 0, maxlength: 7,shade :0,btnAlign: 'c'}, function(value, index){
+                                $.get("/message/friendtype/add",{"groupname":value},function(res){
+                                    if(res.code==0){
+                                        $('.layim-list-friend').append('<li><h5 layim-event="spread" lay-type="false" data-id="'+res.data.group.id+'"><i class="layui-icon">&#xe602;</i><span>'+res.data.group.groupname+'</span><em>(<cite class="layim-count"> 0</cite>)</em></h5><ul class="layui-layim-list"><li class="layim-null">该分组下暂无好友</li></ul></li>');
+                                        layer.msg("新建成功");
+                                    }else{
+                                        layer.msg("新建失败");
+                                    }
+                                    layer.close(index);
+                                });
+                            });
+                        }
+                    },
+                    { // 菜单项
+                        text: "修改分组",
+                        icon: "&#xe642",
+                        callback: function(ele) {
+                            targetIndex = $('.layim-list-friend >li').index(targetObj);
+                            layer.prompt({title: '新分组名称', formType: 0, maxlength: 7,shade :0,value:$(targetObj).find("span:first").text(),btnAlign: 'c'}, function(value, index){
+                                $.get("/message/friendtype/update",{"groupname":value,"targetIndex":targetIndex},function(res){
+                                    if(res.code==0){
+                                        targetObj.find("span:first").text(value);
+                                        layer.msg("修改成功");
+                                    }else{
+                                        layer.msg("修改失败");
+                                    }
+                                    layer.close(index);
+                                });
+                            });
+                        }
+                    },
+                    {
+                        text: "删除分组",
+                        icon: "&#x1006",
+                        callback: function(ele) {
+                            targetIndex = $('.layim-list-friend >li').index(targetObj);
+                            $.get("/message/friendtype/del",{"targetIndex":targetIndex},function(res){
+                                if(res.code==0){
+                                    targetObj.remove();
+                                    layer.msg("删除成功");
+                                }else{
+                                    layer.msg(res.msg);
+                                }
+                                layer.close(index);
+                            });
+                        }
+                    }
+                ]
+            });
+
+            $(".layim-list-friend >li > ul >li").rightMenu({
+                width: 140, // width
+                itemHeight: 30, // 菜单项height
+                bgColor: "#fff", // 背景颜色
+                color: "#333", // 字体颜色
+                fontSize: 15, // 字体大小
+                hoverBgColor: "#009bdd", // hover背景颜色
+                hoverColor: "#fff", // hover背景颜色
+                target: function(ele) { // 当前元素
+                    targetObj = ele;
+                },
+                menu: [
+                    {
+                        text: "修改备注",
+                        icon: "&#xe642",
+                        callback: function(ele) {
+                            var uid = $.trim(targetObj.attr("class").replace(/^layim-friend/g, '').split(" ")[0]);
+                            var uid = uid.split(" ")[0]
+                            layer.prompt({title: '好友备注', formType: 0, maxlength: 7,shade :0,value:$(targetObj).find("span:first").text(),btnAlign: 'c'}, function(value, index){
+                                $.get("/message/friend/remark",{"uid":uid,"remark":value},function(res){
+                                    if(res.code==0){
+                                        targetObj.find("span:first").text(value);
+                                        layer.msg("修改成功");
+                                    }else{
+                                        layer.msg("修改失败");
+                                    }
+                                    layer.close(index);
+                                });
+                            });
+                        }
+                    },
+                    {
+                        text: "移动分组",
+                        icon: "&#xe604",
+                        callback: function(ele) {
+
+                        }
+                    },
+                    {
+                        text: "删除好友",
+                        icon: "&#x1006",
+                        callback: function(ele) {
+                            var uid = $.trim(targetObj.attr("class").replace(/^layim-friend/g, '').split(" ")[0]);
+                            $.get("/message/friend/del",{"uid":uid},function(res){
+                                if(res.code==0){
+                                    layim.removeList({
+                                        type: 'friend'
+                                        ,id: uid
+                                    });
+                                    layer.msg("删除成功");
+                                }else{
+                                    layer.msg("删除失败");
+                                }
+                            });
+                        }
+                    }
+                ]
+            });
+            //群事件
+            $(".layim-list-group >li").rightMenu({
+                width: 140, // width
+                itemHeight: 30, // 菜单项height
+                bgColor: "#fff", // 背景颜色
+                color: "#333", // 字体颜色
+                fontSize: 15, // 字体大小
+                hoverBgColor: "#009bdd", // hover背景颜色
+                hoverColor: "#fff", // hover背景颜色
+                target: function(ele) { // 当前元素
+                    targetObj = ele;
+                    console.log(ele);
+                },
+                menu: [
+                    { // 菜单项
+                        text: "修改名片",
+                        icon: "&#xe642",
+                        callback: function(ele) {
+                            var groupid = $.trim(targetObj.attr("class").replace(/^layim-group/g, ''));
+                            $.get("/message/group/lookGroupRemark",{"groupid":groupid},function(res){
+                                layer.prompt({title: '新的群名片', formType: 0, maxlength: 7,shade :0,value:res.data.groupmember.remark,btnAlign: 'c'}, function(value, index){
+                                    $.get("/message/group/remark",{"groupid":groupid,"remark":value},function(data){
+                                        if(res.code==0){
+                                            layer.msg("修改成功");
+                                        }else{
+                                            layer.msg("修改失败");
+                                        }
+                                        layer.close(index);
+                                    });
+                                });
+                            });
+                        }
+                    },
+                    { // 菜单项
+                        text: "退出该群",
+                        icon: "&#x1006",
+                        callback: function(ele) {
+                            var groupid = $.trim(targetObj.attr("class").replace(/^layim-group/g, ''));
+                            $.get("/message/group/exit",{"groupid":groupid},function(res){
+                                if(res.code==0){
+                                    layim.removeList({
+                                        type: 'group'
+                                        ,id: groupid
+                                    });
+                                    layer.msg("退出成功");
+                                }else{
+                                    layer.msg(res.msg);
+                                }
+                            });
+                        }
+                    }
+                ]
+            });
+            $.get("/message/offline",function(res){
+                if(res.data.msgbox > 0){
+                    layim.msgbox(res.data.msgbox);
+                }
+                if (res.data.data.length > 0) {
+                    $.each(res.data.data,function(index,value){
+                        layim.getMessage(value);
+                    });
+            	}
+            });
+        });
+        layim.on('online', function(status){
+            console.log(status); //获得online或者hide
+            $.get("/message/online/status",{"status":status},function(res){
+
+            });
+        });
+        layim.on('sign', function(value){
+            console.log(value); //获得新的签名
+            $.get("/message/user/sign",{"sign":value},function(res){
+            });
+
+        });
+        layim.on('tool(code)', function(insert, send, obj){ //事件中的tool为固定字符，而code则为过滤器，对应的是工具别名（alias）
+            layer.prompt({
+                title: '插入代码'
+                ,formType: 2
+                ,shade: 0
+            }, function(text, index){
+                layer.close(index);
+                insert('[pre class=layui-code]' + text + '[/pre]'); //将内容插入到编辑器，主要由insert完成
+                //send(); //自动发送
+            });
+            console.log(this); //获取当前工具的DOM对象
+            console.log(obj); //获得当前会话窗口的DOM对象、基础信息
+        });
+        layim.on('chatChange', function(res){
+            var type = res.data.type;
+            if(type == 'friend'){
+                //获取数据库该用户在线状态,本来使用浏览器缓存里获取的但是感觉不准确，还是请求一下后台吧
+                $.get("/message/user/info",{id:res.data.id},function(data){
+                    if(data.code==0){
+                        if(data.data.user.sign==null){
+                            data.data.user.sign='';
+                        }
+                        if(data.data.user.status=="online"){
+                            layim.setChatStatus('<span style="color:#3FDD86;" id="'+res.data.id+'">[在线]</span>'+data.data.user.sign+''); //标注好友在线状态
+                        }else if(data.data.user.status=="hide" || data.data.user.status=="offline"){
+                            layim.setFriendStatus(data.data.user.id, 'offline');
+                            layim.setChatStatus('<span style="color:#FF5722;" id="'+res.data.id+'">[离线]</span>'+data.data.user.sign+'');
+                        }
+                    }else{
+                        layer.msg(data.msg);
+                    }
+                });
+            } else if(type == 'group'){
+                //显示群有多少人
+                $.get("/message/group/join",{id:res.data.id},function(data){
+                });
+                $.get("/message/group/info",{id:res.data.id},function(data){
+                    if(data.code==0){
+                        if(data.data.group.des==null){
+                            data.data.group.des="";
+                        }
+                        layim.setChatStatus('<span>['+data.data.group.des+']'+'</span>');
+                    }
+                });
+            }
+            var targetObj = null;
+            var cid = null;
+            //绑定消息撤回事件
+            $(".layim-chat-mine>.layim-chat-text").off( "contextmenu" );
+            console.log($(".layim-chat-mine>.layim-chat-text").text());
+            $(".layim-chat-mine>.layim-chat-text").rightMenu({
+                width: 140, // width
+                itemHeight: 30, // 菜单项height
+                bgColor: "#fff", // 背景颜色
+                color: "#333", // 字体颜色
+                fontSize: 15, // 字体大小
+                hoverBgColor: "#009bdd", // hover背景颜色
+                hoverColor: "#fff", // hover背景颜色
+                target: function(ele) { // 当前元素
+                    targetObj = ele.parent();
+                    cid = ele.parent().attr("data-cid")
+                },
+                menu: [
+                    {
+                        text: "删除",
+                        icon:"&#xe640",
+                        callback: function(ele) {
+                            $.get("/message/chat/del",{"cid":cid},function(data){
+                                if(data.code==0){
+                                    targetObj.remove();
+                                    var cache =  layui.layim.cache();
+                                    var local = layui.data('layim')[cache.mine.id];     //获取当前用户本地数据
+                                    var chatIndex = null;
+                                    var friendchat = null;
+                                    if (data.data.type=="friend") {
+                                        chatIndex=data.data.type+data.data.to_userid;
+                                        friendchat = local.chatlog[chatIndex];
+                                        var array=[];
+                                        if (friendchat != undefined && friendchat!= null) {
+                                            for(var key in friendchat){
+                                                if(!friendchat.hasOwnProperty(key)){
+                                                    continue;
+                                                }
+                                                if(friendchat[key].cid!=cid){
+                                                    array.push(friendchat[key]);
+                                                }
+                                            }
+                                            local.chatlog[chatIndex]=array;
+                                            //向localStorage同步数据
+                                            layui.data('layim', {
+                                                key: cache.mine.id
+                                                ,value: local
+                                            });
+                                            layim.getMessage({
+                                                system: true //系统消息
+                                                ,id: data.data.to_userid //聊天窗口ID
+                                                ,type: "friend" //聊天窗口类型
+                                                ,content: '你撤回了一条消息'
+                                            });
+                                        }
+                                    }
+                                    if (data.data.type=="group") {
+                                        chatIndex=data.data.type+data.data.to_groupid;
+                                        friendchat = local.chatlog[chatIndex];
+                                        var array=[];
+                                        if (friendchat != undefined && friendchat!= null) {
+                                            for(var key in friendchat){
+                                                if(!friendchat.hasOwnProperty(key)){
+                                                    continue;
+                                                }
+                                                if(friendchat[key].cid!=cid){
+                                                    array.push(friendchat[key]);
+                                                }
+                                            }
+                                            local.chatlog[chatIndex]=array;
+                                            //向localStorage同步数据
+                                            layui.data('layim', {
+                                                key: cache.mine.id
+                                                ,value: local
+                                            });
+                                        }
+                                        layim.getMessage({
+                                            system: true //系统消息
+                                            ,id: data.data.to_groupid //聊天窗口ID
+                                            ,type: "group" //聊天窗口类型
+                                            ,content: '你删除了一条消息'
+                                        });
+                                    }
+                                } else {
+                                    layer.msg("消息删除失败");
+                                }
+                            });
+                        }
+                    },
+                    {
+                        text: "撤回",
+                        icon:"&#xe609",
+                        callback: function(ele) {
+                            $.get("/message/chat/cancel",{"cid":cid},function(data){
+                                if(data.code==0){
+                                    targetObj.remove();
+                                    var cache =  layui.layim.cache();
+                                    var local = layui.data('layim')[cache.mine.id];   //获取当前用户本地数据
+                                    var chatIndex = null;
+                                    var friendchat = null;
+                                    if (data.data.type=="friend") {
+                                        chatIndex=data.data.type+data.data.to_userid;
+                                        friendchat = local.chatlog[chatIndex];
+                                        var array=[];
+                                        if (friendchat != undefined && friendchat!= null) {
+                                            for(var key in friendchat){
+                                                if(!friendchat.hasOwnProperty(key)){
+                                                    continue;
+                                                }
+                                                if(friendchat[key].cid!=cid){
+                                                    array.push(friendchat[key]);
+                                                }
+                                            }
+                                            local.chatlog[chatIndex]=array;
+                                            //向localStorage同步数据
+                                            layui.data('layim', {
+                                                key: cache.mine.id
+                                                ,value: local
+                                            });
+                                        }
+                                        layim.getMessage({
+                                            system: true //系统消息
+                                            ,id: data.data.to_userid //聊天窗口ID
+                                            ,type: "friend" //聊天窗口类型
+                                            ,content: '你撤回了一条消息'
+                                        });
+                                    }
+                                    if (data.data.type=="group") {
+                                        chatIndex=data.data.type+data.data.to_groupid;
+                                        friendchat = local.chatlog[chatIndex];
+                                        var array=[];
+                                        if (friendchat != undefined && friendchat!= null) {
+                                            for(var key in friendchat){
+                                                if(!friendchat.hasOwnProperty(key)){
+                                                    continue;
+                                                }
+                                                if(friendchat[key].cid!=cid){
+                                                    array.push(friendchat[key]);
+                                                }
+                                            }
+                                            local.chatlog[chatIndex]=array;
+                                            //向localStorage同步数据
+                                            layui.data('layim', {
+                                                key: cache.mine.id
+                                                ,value: local
+                                            });
+                                        }
+                                        layim.getMessage({
+                                            system: true //系统消息
+                                            ,id: data.data.to_groupid //聊天窗口ID
+                                            ,type: "group" //聊天窗口类型
+                                            ,content: '你撤回了一条消息'
+                                        });
+                                    }
+                                } else {
+                                    layer.msg("消息删除失败");
+                                }
+                            });
+                        }
+                    }
+                ]
+            });
+        });
+        var sendMessage = function(){var uuid=guid();$("#sender-cid").val(uuid);var data = {username: cache.mine ? cache.mine.username : '访客',avatar: cache.mine ? cache.mine.avatar : (layui.cache.dir+'css/pc/layim/skin/logo.jpg'),id: cache.mine ? cache.mine.id : null,cid: $("#sender-cid").val(),mine: true}};
+        layim.on('sendMessage', function(res){
+            //http发送消息接口
+            $.get("/message/send",{"type":1,"message":JSON.stringify(res)},function(data){
+                if(data.code!=0){
+                    layer.msg("发送失败");
+                }else{
+                    var targetObj = null;
+                    var cid = null;
+                    //绑定消息撤回事件
+                    $(".layim-chat-mine>.layim-chat-text").off( "contextmenu" );
+                    console.log($(".layim-chat-mine>.layim-chat-text").text());
+                    $(".layim-chat-mine>.layim-chat-text").rightMenu({
+                        width: 140, // width
+                        itemHeight: 30, // 菜单项height
+                        bgColor: "#fff", // 背景颜色
+                        color: "#333", // 字体颜色
+                        fontSize: 15, // 字体大小
+                        hoverBgColor: "#009bdd", // hover背景颜色
+                        hoverColor: "#fff", // hover背景颜色
+                        target: function(ele) { // 当前元素
+                            targetObj = ele.parent();
+                            cid = ele.parent().attr("data-cid")
+                        },
+                        menu: [
+                            {
+                                text: "删除",
+                                icon:"&#xe640",
+                                callback: function(ele) {
+                                    $.get("/message/chat/del",{"cid":cid},function(data){
+                                        if(data.code==0){
+                                            targetObj.remove();
+                                            var cache =  layui.layim.cache();
+                                            var local = layui.data('layim')[cache.mine.id];     //获取当前用户本地数据
+                                            var chatIndex = null;
+                                            var friendchat = null;
+                                            if (data.data.type=="friend") {
+                                                chatIndex=data.data.type+data.data.to_userid;
+                                                friendchat = local.chatlog[chatIndex];
+                                                var array=[];
+                                                if (friendchat != undefined && friendchat!= null) {
+                                                    for(var key in friendchat){
+                                                        if(!friendchat.hasOwnProperty(key)){
+                                                            continue;
+                                                        }
+                                                        if(friendchat[key].cid!=cid){
+                                                            array.push(friendchat[key]);
+                                                        }
+                                                    }
+                                                    local.chatlog[chatIndex]=array;
+                                                    //向localStorage同步数据
+                                                    layui.data('layim', {
+                                                        key: cache.mine.id
+                                                        ,value: local
+                                                    });
+                                                    layim.getMessage({
+                                                        system: true //系统消息
+                                                        ,id: data.data.to_userid //聊天窗口ID
+                                                        ,type: "friend" //聊天窗口类型
+                                                        ,content: '你删除了一条消息'
+                                                    });
+                                                }
+                                            }
+                                            if (data.data.type=="group") {
+                                                chatIndex=data.data.type+data.data.to_groupid;
+                                                friendchat = local.chatlog[chatIndex];
+                                                var array=[];
+                                                if (friendchat != undefined && friendchat!= null) {
+                                                    for(var key in friendchat){
+                                                        if(!friendchat.hasOwnProperty(key)){
+                                                            continue;
+                                                        }
+                                                        if(friendchat[key].cid!=cid){
+                                                            array.push(friendchat[key]);
+                                                        }
+                                                    }
+                                                    local.chatlog[chatIndex]=array;
+                                                    //向localStorage同步数据
+                                                    layui.data('layim', {
+                                                        key: cache.mine.id
+                                                        ,value: local
+                                                    });
+                                                }
+                                                layim.getMessage({
+                                                    system: true //系统消息
+                                                    ,id: data.data.to_groupid //聊天窗口ID
+                                                    ,type: "group" //聊天窗口类型
+                                                    ,content: '你删除了一条消息'
+                                                });
+                                            }
+                                        } else {
+                                            layer.msg("消息删除失败");
+                                        }
+                                    });
+                                }
+                            },
+                            {
+                                text: "撤回",
+                                icon:"&#xe609",
+                                callback: function(ele) {
+                                    $.get("/message/chat/cancel",{"cid":cid},function(data){
+                                        if(data.code==0){
+                                            targetObj.remove();
+                                            var cache =  layui.layim.cache();
+                                            var local = layui.data('layim')[cache.mine.id];   //获取当前用户本地数据
+                                            var chatIndex = null;
+                                            var friendchat = null;
+                                            if (data.data.type=="friend") {
+                                                chatIndex=data.data.type+data.data.to_userid;
+                                                friendchat = local.chatlog[chatIndex];
+                                                var array=[];
+                                                if (friendchat != undefined && friendchat!= null) {
+                                                    for(var key in friendchat){
+                                                        if(!friendchat.hasOwnProperty(key)){
+                                                            continue;
+                                                        }
+                                                        if(friendchat[key].cid!=cid){
+                                                            array.push(friendchat[key]);
+                                                        }
+                                                    }
+                                                    local.chatlog[chatIndex]=array;
+                                                    //向localStorage同步数据
+                                                    layui.data('layim', {
+                                                        key: cache.mine.id
+                                                        ,value: local
+                                                    });
+                                                }
+                                                layim.getMessage({
+                                                    system: true //系统消息
+                                                    ,id: data.data.to_userid //聊天窗口ID
+                                                    ,type: "friend" //聊天窗口类型
+                                                    ,content: '你撤回了一条消息'
+                                                });
+                                            }
+                                            if (data.data.type=="group") {
+                                                chatIndex=data.data.type+data.data.to_groupid;
+                                                friendchat = local.chatlog[chatIndex];
+                                                var array=[];
+                                                if (friendchat != undefined && friendchat!= null) {
+                                                    for(var key in friendchat){
+                                                        if(!friendchat.hasOwnProperty(key)){
+                                                            continue;
+                                                        }
+                                                        if(friendchat[key].cid!=cid){
+                                                            array.push(friendchat[key]);
+                                                        }
+                                                    }
+                                                    local.chatlog[chatIndex]=array;
+                                                    //向localStorage同步数据
+                                                    layui.data('layim', {
+                                                        key: cache.mine.id
+                                                        ,value: local
+                                                    });
+                                                }
+                                                layim.getMessage({
+                                                    system: true //系统消息
+                                                    ,id: data.data.to_groupid //聊天窗口ID
+                                                    ,type: "group" //聊天窗口类型
+                                                    ,content: '你撤回了一条消息'
+                                                });
+                                            }
+                                        } else {
+                                            layer.msg("消息删除失败");
+                                        }
+                                    });
+                                }
+                            }
+                        ]
+                    });
+                }
+            });
+        });
+    });
+</script>
+<div id="wrapper">
+	<input type="hidden" value="" id="sender-cid" />
+    <!--左侧导航开始-->
+    <nav class="navbar-default navbar-static-side" role="navigation">
+        <div class="nav-close">
+            <i class="fa fa-times-circle"></i>
+        </div>
+        <div class="sidebar-collapse">
+            <ul class="nav" id="side-menu">
+                <a th:href="@{/index}">
+                  <li class="logo">
+				    <span class="logo-lg" >EasyIM</span>
+            	  </li>
+            	</a>
+            	<li>
+            		<div class="user-panel">
+            			<a class="menuItem" title="个人中心" th:href="@{/system/user/profile}"> 
+            				<div class="hide" th:text="个人中心"></div>
+					        <div class="pull-left image">
+		                    	<img th:src="(${user.avatarUrl} == '') ? @{/easyim/images/default.jpg} : @{${user.avatarUrl}}" class="img-circle" alt="User Image">
+					        </div>
+				        </a>
+				        <div class="pull-left info">
+				          <p>[[${user.loginName}]]</p>
+				          <a href="#"><i class="fa fa-circle text-success"></i> 在线</a>
+				          <a th:href="@{logout}" style="padding-left:5px;"><i class="fa fa-sign-out text-danger"></i> 注销</a>
+				        </div>
+				    </div>
+            	</li>
+                <li>
+                    <a href="#"><i class="fa fa-home"></i> <span class="nav-label">主页</span> <span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a class="menuItem" th:href="@{/system/main}">了解EasyIM</a></li>
+                    </ul>
+                </li>
+                <li th:each="menu : ${menus}">
+                	<a th:class="@{${menu.url != '' && menu.url != '#'} ? ${menu.target}}" th:href="@{${menu.url == ''} ? |#| : ${menu.url}}">
+                		<i class="fa fa-bar-chart-o" th:class="${menu.icon}"></i>
+                    	<span class="nav-label" th:text="${menu.menuName}">一级菜单</span> 
+                    	<span th:class="${menu.url == '' || menu.url == '#'} ? |fa arrow|"></span>
+                	</a>
+                    <ul class="nav nav-second-level collapse">
+						<li th:each="cmenu : ${menu.children}">
+							<a th:if="${#lists.isEmpty(cmenu.children)}" th:class="${cmenu.target == ''} ? |menuItem| : ${cmenu.target}" th:utext="${cmenu.menuName}" th:href="@{${cmenu.url}}">二级菜单</a>
+							<a th:if="${not #lists.isEmpty(cmenu.children)}" href="#">[[${cmenu.menuName}]]<span class="fa arrow"></span></a>
+							<ul th:if="${not #lists.isEmpty(cmenu.children)}" class="nav nav-third-level">
+								<li th:each="emenu : ${cmenu.children}"><a th:class="${emenu.target == ''} ? |menuItem| : ${emenu.target}" th:text="${emenu.menuName}" th:href="@{${emenu.url}}">三级菜单</a></li>
+							</ul>
+						</li>
+					</ul>
+                </li>
+                <li th:if="${demoEnabled}">
+                    <a href="#"><i class="fa fa-desktop"></i><span class="nav-label">实例演示</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse">
+                        <li> <a>表单<span class="fa arrow"></span></a>
+                            <ul class="nav nav-third-level">
+								<li><a class="menuItem" th:href="@{/demo/form/button}">按钮</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/grid}">栅格</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/select}">下拉框</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/timeline}">时间轴</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/basic}">基本表单</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/cards}">卡片列表</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/jasny}">功能扩展</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/sortable}">拖动排序</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/tabs_panels}">选项卡 & 面板</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/validate}">表单校验</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/wizard}">表单向导</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/upload}">文件上传</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/datetime}">日期和时间</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/summernote}">富文本编辑器</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/duallistbox}">左右互选组件</a></li>
+								<li><a class="menuItem" th:href="@{/demo/form/autocomplete}">搜索自动补全</a></li>
+							</ul>
+                        </li>
+                        <li> <a>表格<span class="fa arrow"></span></a>
+                            <ul class="nav nav-third-level">
+								<li><a class="menuItem" th:href="@{/demo/table/search}">查询条件</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/footer}">数据汇总</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/groupHeader}">组合表头</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/export}">表格导出</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/remember}">翻页记住选择</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/pageGo}">跳转至指定页</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/params}">自定义查询参数</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/multi}">初始多表格</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/button}">点击按钮加载表格</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/fixedColumns}">表格冻结列</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/event}">自定义触发事件</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/detail}">表格细节视图</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/child}">表格父子视图</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/image}">表格图片预览</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/curd}">动态增删改查</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/reorder}">表格拖拽操作</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/editable}">表格行内编辑</a></li>
+								<li><a class="menuItem" th:href="@{/demo/table/other}">表格其他操作</a></li>
+							</ul>
+                        </li>
+                        <li> <a>弹框<span class="fa arrow"></span></a>
+                            <ul class="nav nav-third-level">
+								<li><a class="menuItem" th:href="@{/demo/modal/dialog}">模态窗口</a></li>
+								<li><a class="menuItem" th:href="@{/demo/modal/layer}">弹层组件</a></li>
+								<li><a class="menuItem" th:href="@{/demo/modal/table}">弹层表格</a></li>
+							</ul>
+                        </li>
+                        <li> <a>操作<span class="fa arrow"></span></a>
+                            <ul class="nav nav-third-level">
+								<li><a class="menuItem" th:href="@{/demo/operate/table}">表格</a></li>
+								<li><a class="menuItem" th:href="@{/demo/operate/other}">其他</a></li>
+							</ul>
+                        </li>
+                        <li> <a>报表<span class="fa arrow"></span></a>
+                            <ul class="nav nav-third-level">
+								<li><a class="menuItem" th:href="@{/demo/report/echarts}">百度ECharts</a></li>
+								<li><a class="menuItem" th:href="@{/demo/report/peity}">peity</a></li>
+								<li><a class="menuItem" th:href="@{/demo/report/sparkline}">sparkline</a></li>
+								<li><a class="menuItem" th:href="@{/demo/report/metrics}">图表组合</a></li>
+							</ul>
+                        </li>
+                        <li> <a>图标<span class="fa arrow"></span></a>
+                            <ul class="nav nav-third-level">
+								<li><a class="menuItem" th:href="@{/demo/icon/fontawesome}">Font Awesome</a></li>
+								<li><a class="menuItem" th:href="@{/demo/icon/glyphicons}">Glyphicons</a></li>
+							</ul>
+                        </li>
+                        <li>
+	                        <a href="#"><i class="fa fa-sitemap"></i> <span class="nav-label">四层菜单 </span><span class="fa arrow"></span></a>
+	                        <ul class="nav nav-second-level collapse">
+	                            <li>
+	                                <a href="#" id="damian">三级菜单1<span class="fa arrow"></span></a>
+	                                <ul class="nav nav-third-level">
+	                                    <li>
+	                                        <a href="#">四级菜单1</a>
+	                                    </li>
+	                                    <li>
+	                                        <a href="#">四级菜单2</a>
+	                                    </li>
+	                                </ul>
+	                            </li>
+	                            <li><a href="#">三级菜单2</a></li>
+	                        </ul>
+	                    </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <!--左侧导航结束-->
+    
+    <!--右侧部分开始-->
+    <div id="page-wrapper" class="gray-bg dashbard-1">
+        <div class="row border-bottom">
+            <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0;height:50px;">
+                <div class="navbar-header">
+                    <a class="navbar-minimalize minimalize-styl-2" style="color:#FFF;" href="#" title="收起菜单">
+                    	<i class="fa fa-bars"></i>
+                    </a>
+                </div>
+                <ul class="nav navbar-top-links navbar-right welcome-message">
+                    <!--<li><a title="阿里云双11" href="https://www.aliyun.com/1111/2019/group-buying-share?ptCode=79B1148C588D554F3E87264DB80E6C90647C88CF896EF535&userCode=brki8iof&share_source=copy_link" target="_blank"><i class="fa fa-cloud"></i> 阿里云双11</a></li>
+				    <li><a title="视频教程" href="http://doc.ruoyi.vip/ruoyi/document/spjc.html" target="_blank"><i class="fa fa-video-camera"></i> 视频教程</a></li>
+                    <li><a title="开发文档" href="http://doc.ruoyi.vip" target="_blank"><i class="fa fa-question-circle"></i> 开发文档</a></li>-->
+	                <li><a title="全屏显示" href="javascript:void(0)" id="fullScreen"><i class="fa fa-arrows-alt"></i> 全屏显示</a></li>
+                    <li class="dropdown user-menu">
+						<a href="javascript:void(0)" class="dropdown-toggle" data-hover="dropdown">
+							<img th:src="(${user.avatarUrl} == '') ? @{/easyim/images/default.jpg} : @{${user.avatarUrl}}" class="user-image">
+							<span class="hidden-xs">[[${user.userName}]]</span>
+						</a>
+						<ul class="dropdown-menu">
+							<li class="mt5">
+								<a th:href="@{/system/user/profile}" class="menuItem">
+								<i class="fa fa-user"></i> 个人中心</a>
+							</li>
+							<li>
+								<a onclick="resetPwd()">
+								<i class="fa fa-key"></i> 修改密码</a>
+							</li>
+							<!--<li>
+								<a onclick="switchSkin()">
+								<i class="fa fa-dashboard"></i> 切换主题</a>
+							</li>-->
+							<li class="divider"></li>
+							<li>
+								<a th:href="@{logout}">
+								<i class="fa fa-sign-out"></i> 退出登录</a>
+							</li>
+						</ul>
+					</li>
+                </ul>
+            </nav>
+        </div>
+        <div class="row content-tabs">
+            <button class="roll-nav roll-left tabLeft">
+                <i class="fa fa-backward"></i>
+            </button>
+            <nav class="page-tabs menuTabs">
+                <div class="page-tabs-content">
+                    <a href="javascript:;" class="active menuTab" data-id="/system/main">首页</a>
+                </div>
+            </nav>
+            <button class="roll-nav roll-right tabRight">
+                <i class="fa fa-forward"></i>
+            </button>
+            <a href="javascript:void(0);" class="roll-nav roll-right tabReload"><i class="fa fa-refresh"></i> 刷新</a>
+        </div>
+        
+        <a id="ax_close_max" class="ax_close_max" href="#" title="关闭全屏"> <i class="fa fa-times-circle-o"></i> </a>
+                    
+        <div class="row mainContent" id="content-main">
+            <iframe class="RuoYi_iframe" name="iframe0" width="100%" height="100%" data-id="/system/main"
+                    th:src="@{/system/main}" frameborder="0" seamless></iframe>
+        </div>
+        <div class="footer">
+            <div class="pull-right">© [[${copyrightYear}]] EasyIM Copyright </div>
+        </div>
+    </div>
+    <!--右侧部分结束-->
+</div>
+<!-- 全局js -->
+<script th:src="@{/js/bootstrap.min.js}"></script>
+<script th:src="@{/js/plugins/metisMenu/jquery.metisMenu.js}"></script>
+<script th:src="@{/js/plugins/slimscroll/jquery.slimscroll.min.js}"></script>
+<script th:src="@{/js/jquery.contextMenu.min.js}"></script>
+<script th:src="@{/ajax/libs/blockUI/jquery.blockUI.js}"></script>
+<script th:src="@{/ajax/libs/layer/layer.min.js}"></script>
+<script th:src="@{/emessage/js/ry-ui.js?v=4.1.0}"></script>
+<script th:src="@{/emessage/js/common.js?v=4.1.0}"></script>
+<script th:src="@{/emessage/index.js}"></script>
+<script th:src="@{/ajax/libs/fullscreen/jquery.fullscreen.js}"></script>
+<script th:inline="javascript">
+var ctx = [[@{/}]];
+var skin = storage.get("skin");
+// 本地主题优先，未设置取系统配置
+if($.common.isNotEmpty(skin)){
+	$("body").addClass(skin.split('|')[0]);
+	$("body").addClass(skin.split('|')[1]);
+} else {
+	var sideTheme = [[${@config.getKey('sys.index.sideTheme')}]];
+	var skinName = [[${@config.getKey('sys.index.skinName')}]];
+	$("body").addClass(sideTheme);
+	$("body").addClass(skinName);
+}
+
+/* 用户管理-重置密码 */
+function resetPwd() {
+    var url = ctx + 'system/user/profile/resetPwd';
+    $.modal.open("重置密码", url, '770', '380');
+}
+/* 切换主题 */
+/*function switchSkin() {
+    layer.open({
+		type : 2,
+		shadeClose : true,
+		title : "切换主题",
+		area : ["530px", "386px"],
+		content : [ctx + "system/switchSkin", 'no']
+	})
+}*/
+
+// 排除非左侧菜单链接
+var excludesUrl = ["/system/user/profile"];
+
+$(function() {
+    var hash = location.hash;
+    if (hash !== '') {
+        var url = hash.substring(1, hash.length);
+        $('a[href$="' + decodeURI(url) + '"]').click();
+        if($.inArray(url, excludesUrl)){
+            $('a[href$="' + url + '"]').parent("li").addClass("selected").parents("li").addClass("active").end().parents("ul").addClass("in");
+        }
+    }
+});
+</script>
+</body>
+</html>

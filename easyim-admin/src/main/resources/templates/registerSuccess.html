@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html  lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+	<title>登录EasyIM系统</title>
+	<meta name="description" content="EasyIM">
+	<link href="../static/css/auth.css" th:href="@{/css/auth.css}" rel="stylesheet"/>
+    <link href="../static/css/bootstrap.min.css" th:href="@{/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link href="../static/css/font-awesome.min.css" th:href="@{/css/font-awesome.min.css}" rel="stylesheet"/>
+    <link href="../static/css/style.css" th:href="@{/css/style.css}" rel="stylesheet"/>
+    <link href="../static/css/login.min.css" th:href="@{/css/login.min.css}" rel="stylesheet"/>
+    <link href="../static/emessage/css/ry-ui.css" th:href="@{/emessage/css/ry-ui.css?v=4.1.0}" rel="stylesheet"/>
+	<link rel="shortcut icon" href="../static/favicon.ico" th:href="@{favicon.ico}"/>
+	<style type="text/css">label.error { position:inherit;  }</style>
+	<script>
+        if(window.top!==window.self){window.top.location=window.location};
+	</script>
+</head>
+
+<body>
+	<div class="lowin">
+		<div>
+			<h1 style="color:#44A0B3;font-size:32px;font-weight:1000;font-family:'Segoe UI'">EasyIM</h1><p style="color:var(--color-semidark);font-weight:700;font-size:14px;font-family:'Segoe UI'">基于nchan+layim+FastDFS的即时通讯系统</p>
+		</div>
+		<div class="lowin-brand">
+			<img src="../static/img/easyim.jpg" th:src="@{/img/easyim.jpg}" class="img-circle" alt="logo">
+		</div>
+		<div class="lowin-wrapper">
+			<div class="lowin-box lowin-login">
+				<div class="lowin-box-inner">
+					<form id="signupForm">
+						<p>注册成功！</p>
+						<div class="text-foot">
+							已经成功注册EasyIM用户! <a href="/login" class="loginButton">开始登录</a>
+						</div>
+					</form>
+				</div>
+			</div>
+		<footer class="lowin-footer">
+		</footer>
+	</div>
+	<script src="../static/message/auth.js" th:src="@{/emessage/auth.js}"></script>
+	<script>
+		Auth.init({
+			login_url: '#login',
+			forgot_url: '#forgot'
+		});
+	</script>
+    <script th:inline="javascript">
+        var ctx = [[@{/}]];
+        var captchaType = [[${captchaType}]];
+    </script>
+    <!-- 全局js -->
+    <script src="../static/js/jquery.min.js" th:src="@{/js/jquery.min.js}"></script>
+    <script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+    <!-- 验证插件 -->
+    <script src="../static/ajax/libs/validate/jquery.validate.min.js" th:src="@{/ajax/libs/validate/jquery.validate.min.js}"></script>
+    <script src="../static/ajax/libs/validate/messages_zh.min.js" th:src="@{/ajax/libs/validate/messages_zh.min.js}"></script>
+    <script src="../static/ajax/libs/layer/layer.min.js" th:src="@{/ajax/libs/layer/layer.min.js}"></script>
+    <script src="../static/ajax/libs/blockUI/jquery.blockUI.js" th:src="@{/ajax/libs/blockUI/jquery.blockUI.js}"></script>
+    <script src="../static/emessage/js/ry-ui.js" th:src="@{/emessage/js/ry-ui.js?v=4.1.0}"></script>
+    <script src="../static/emessage/login.js" th:src="@{/emessage/login.js}"></script>
+</body>
+</html>

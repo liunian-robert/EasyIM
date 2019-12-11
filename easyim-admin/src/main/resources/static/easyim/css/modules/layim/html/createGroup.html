@@ -1,0 +1,159 @@
+ 
+ 
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>创建群</title>
+<link rel="stylesheet" href="/easyim/css/layui.css" />
+<link rel="stylesheet" href="/easyim/css/layui.demo.css" />
+<style type="text/css">
+.layui-find-list li img {
+    position: absolute;
+    left: 15px;
+    top: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 100%;
+}
+.layui-find-list li {
+    position: relative;
+    height: 90px;;
+    padding: 5px 15px 5px 60px;
+    font-size: 0;
+    cursor: pointer;
+}
+.layui-find-list li * {
+    display: inline-block;
+    vertical-align: top;
+    font-size: 14px;
+	overflow: hidden; 
+	text-overflow:ellipsis; 
+	white-space: nowrap;
+}
+.layui-find-list li span {
+    margin-top: 4px;
+    max-width: 155px;
+}
+
+.layui-find-list li p {
+    display: block;
+    line-height: 18px;
+    font-size: 12px;
+    color: #999;
+	overflow: hidden; 
+	text-overflow:ellipsis; 
+	white-space: nowrap;
+}
+.back{
+	cursor:pointer;
+}
+.lay_page{position: fixed;bottom: 0;margin-left: -15px;margin-bottom: 20px;background: #fff;width: 100%;}
+.layui-laypage{width: 105px;margin:0 auto;display: block}
+.pt30{padding-top: 30px;}
+.img-circle , .img-circle  img {
+    cursor: pointer;
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+    border-radius: 100%;
+}
+</style>
+<script src="/easyim/layui.js"></script>
+
+</head>
+<body>	    
+<form class="layui-form layui-row mt15" action="">
+  <div class="layui-form-item layui-col-xs11">
+    <label class="layui-form-label pt30" >群头像</label>
+    <div class="layui-input-block">
+      <div class="img-circle"  id="updateImg">
+      	<img src="/easyim/images/default.jpg" fileId="" class="layui-circle"  id="avatar">
+      </div>
+    </div>
+  </div>
+  <div class="layui-form-item layui-col-xs11">
+    <label class="layui-form-label">群名称</label>
+    <div class="layui-input-block">
+      <input type="text" name="groupName" id="groupName" lautocomplete="off"  maxlength="10"  placeholder="为你的群取个名字吧！" class="layui-input">
+    </div>
+  </div>
+  <div class="layui-form-item layui-col-xs11">
+    <label class="layui-form-label">群简介</label>
+    <div class="layui-input-block">
+      <input type="text" name="des" id="des" autocomplete="off" placeholder="简单介绍一下吧！"  maxlength="20" class="layui-input">
+    </div>
+  </div>
+ <div class="layui-form-item layui-col-xs11">
+    <label class="layui-form-label">群说明</label>
+    <div class="layui-input-block">
+      群成员上限默认为500人，会根据活跃度进行调整。
+    </div>
+  </div>
+  <div class="layui-form-item layui-col-xs10 layui-col-xs-offset1 pt30">
+    <div class="layui-input-block">
+      <a lay-submit class="layui-btn btncolor sure" >确认创建</a>
+    </div>
+  </div>    
+</form>
+
+</body>
+<script>
+layui.use(['form','layim','laypage','upload'], function(socket){
+  var layim = layui.layim
+  , layer = layui.layer
+  ,laytpl = layui.laytpl
+  ,form = layui.form
+  ,$ = layui.jquery
+  ,laypage = layui.laypage
+  ,upload = layui.upload
+  ,param =  location.search;
+  //执行实例
+  var uploadInst = upload.render({
+    elem: '#updateImg' //绑定元素
+    ,url: '/common/upload' //上传接口
+    ,done: function(res){
+    	$("#avatar").attr("src",res.data.src);
+    	$("#avatar").attr("fileId",res.data.fileId)
+    }
+    ,error: function(index, upload){
+    	console.log(index);
+    	console.log(upload);
+    }
+  });
+    $('body').on('click', '.sure', function () {
+        var othis = $(this);
+        if($.trim($("#groupName").val()).length==0){
+        	layer.msg("请填写群名称");
+        	return false;
+        }
+        if ($("#avatar").attr("fileId")==null||$("#avatar").attr("fileId")=="" || $("#avatar").attr("fileId")==undefined) {
+            layer.msg("请上传群头像");
+            return false;
+        }
+		var data = {
+			des:$("#des").val(),
+			groupname:$("#groupName").val(),
+			avatar:$("#avatar").attr("fileId")
+		};   
+		
+		$.get("/message/friend/group",data,function(res){
+			if(res.code==0){
+				//将好友追加到主面板
+		        parent.layui.layim.addList({
+		          type: 'group'
+		          ,avatar: res.data.group.avatar
+		          ,groupname: res.data.group.groupname //好友昵称
+		          ,id: res.data.group.id
+		        });
+		        parent.layui.layer.closeAll('iframe');
+		        parent.layui.layer.msg("创建成功");
+			}else{
+				layer.msg("创建失败");
+			}
+		});
+    });
+});
+</script>
+</html>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easyim.system.mapper.SysChatMapper">
+
+    <resultMap type="SysChat" id="SysChatResult">
+        <id     property="id"           column="id"                />
+        <result property="fromid"       column="fromid"            />
+        <result property="to_userid"         column="to_userid"              />
+        <result property="to_groupid"         column="to_groupid"              />
+        <result property="content"      column="content"           />
+        <result property="timestamp"    column="timestamp"         />
+        <result property="type"         column="type"              />
+        <result property="status"       column="status"            />
+    </resultMap>
+
+
+    <resultMap type="SysChatRecord" id="SysChatRecordResult">
+        <id     property="id"           column="id"                />
+        <result property="username"       column="username"            />
+        <result property="avatar"         column="avatar"              />
+        <result property="content"         column="content"              />
+        <result property="timestamp"    column="timestamp"         />
+    </resultMap>
+
+    <select id="findSysChatByUserId" parameterType="String" resultMap="SysChatResult">
+        select c.fromid as  id,c.fromid,c.to_userid,c.to_groupid,c.content,c.`timestamp`,c.type,f.remark as username,u.avatar from sys_chat as c left join sys_friend as f on c.`to_userid`=f.belong  left join `sys_user` as u on c.`fromid`=u.user_id where c.`to_userid`=#{userid} and c.`status`=2 and f.userid=c.`fromid`
+    </select>
+
+    <select id="getSysChatById" resultMap="SysChatResult">
+        select id,fromid,to_userid,to_groupid,content,`timestamp`,`type`,status from sys_chat where id=#{id} limit 1
+    </select>
+
+    <select id="findChatRecord" resultMap="SysChatRecordResult">
+        select c.fromid as id,c.content,c.timestamp,f.remark as username,u.avatar from sys_chat as c left join sys_friend as f on c.`to_userid`=f.belong  left join `sys_user` as u on c.`fromid`=u.user_id where (c.type="friend" and c.`to_userid`=#{toid} and c.`fromid`=#{fromid} and f.userid=c.`fromid` ) or (c.type="friend" and c.`to_userid`=#{fromid} and c.`fromid`=#{toid} and f.userid=c.`fromid` ) order by c.`timestamp` asc
+    </select>
+
+    <select id="findGroupChatRecord" resultMap="SysChatRecordResult">
+        SELECT
+        c.fromid AS id,
+        c.content,
+        c.`timestamp`,
+        b.remark AS username,
+        u.avatar
+        FROM
+        sys_chat AS c
+        LEFT JOIN sys_group_member AS b ON c.fromid = b.userid and c.to_groupid=b.groupid
+        LEFT JOIN `sys_user` AS u ON u.user_id = c.fromid
+        WHERE
+        c.type = 'group'
+        AND c.to_groupid = #{groupid} order by c.`timestamp` ASC
+    </select>
+
+    <update id="updateSysChatStatus">
+        update  sys_chat set `status`=1 where `status`=2 and  to_userid=#{userid}
+    </update>
+
+
+    <update id="delSysChatById">
+        delete from  sys_chat where id=#{id}
+    </update>
+
+    <insert id="saveSysChat" parameterType="SysChat">
+        insert into sys_chat (
+        <if test="id != null and id != ''">id,</if>
+        <if test="fromid != null and fromid != ''">fromid,</if>
+        <if test="to_userid != null and to_userid != ''">to_userid,</if>
+        <if test="to_groupid != null and to_groupid != ''">to_groupid,</if>
+        <if test="content != null and content != ''">content,</if>
+        <if test="timestamp != null and timestamp != ''">`timestamp`,</if>
+        <if test="type != null and type != ''">type,</if>
+        <if test="status != null">status</if>
+
+        ) values (
+        <if test="id != null and id != ''">#{id},</if>
+        <if test="fromid != null and fromid != ''">#{fromid},</if>
+        <if test="to_userid != null and to_userid != ''">#{to_userid},</if>
+        <if test="to_groupid != null and to_groupid != ''">#{to_groupid},</if>
+        <if test="content != null and content != ''">#{content},</if>
+        <if test="timestamp != null and timestamp != ''">#{timestamp},</if>
+        <if test="type != null and type != ''">#{type},</if>
+        <if test="status != null">#{status}</if>
+        )
+    </insert>
+</mapper>

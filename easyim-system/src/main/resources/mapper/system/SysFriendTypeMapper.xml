@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easyim.system.mapper.SysFriendTypeMapper">
+
+    <resultMap type="SysFriendType" id="SysFriendTypeResult">
+        <id     property="id"      column="id"                  />
+        <result property="groupname"    column="groupname"      />
+        <result property="userid"     column="userid"           />
+        <result property="sort"      column="sort"    />
+    </resultMap>
+
+    <sql id="selectFriendTypeVo">
+        select id, groupname, userid, sort from sys_friend_type
+    </sql>
+
+    <select id="selectSysFriendTypeByUserId" parameterType="String" resultMap="SysFriendTypeResult">
+        <include refid="selectFriendTypeVo"/>
+        where userid=#{userid} order by sort asc
+    </select>
+
+
+    <select id="selectSort" parameterType="String" resultType="java.lang.Integer">
+        select count(*) from sys_friend_type where userid=#{userid}
+    </select>
+
+    <update id="updateSysFriendType">
+        update sys_friend_type set groupname=#{groupname} where id=#{id}
+    </update>
+
+    <update id="delSysFriendType">
+        delete from sys_friend_type where id=#{id}
+    </update>
+
+    <insert id="saveSysFriendType" parameterType="SysFriendType">
+        insert into sys_friend_type (
+        <if test="id != null and id != ''">id,</if>
+        <if test="groupname != null and groupname != ''">groupname,</if>
+        <if test="userid != null and userid != ''">userid,</if>
+        <if test="sort != null and sort != ''">sort</if>
+
+        ) values (
+        <if test="id != null and id != ''">#{id},</if>
+        <if test="groupname != null and groupname != ''">#{groupname},</if>
+        <if test="userid != null and userid != ''">#{userid},</if>
+        <if test="sort != null and sort != ''">#{sort}</if>
+        )
+    </insert>
+</mapper>

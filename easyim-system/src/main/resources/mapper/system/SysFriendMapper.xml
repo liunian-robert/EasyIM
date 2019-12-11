@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easyim.system.mapper.SysFriendMapper">
+
+    <resultMap type="SysFriend" id="SysFriendResult">
+        <id     property="id"      column="id"                  />
+        <result property="groupid"    column="groupid"          />
+        <result property="userid"     column="userid"           />
+        <result property="remark"      column="remark"          />
+        <result property="timestamp"      column="timestamp"    />
+        <result property="belong"      column="belong"          />
+    </resultMap>
+
+    <resultMap type="SysFriendUser" id="SysFriendUserResult">
+        <id     property="id"      column="id"                  />
+    <result property="avatar"    column="avatar"                />
+        <result property="phone"     column="phone"             />
+        <result property="sign"     column="sign"               />
+        <result property="status"      column="status"          />
+        <result property="username"      column="username"      />
+    </resultMap>
+
+    <select id="selectSysFriendByTypeId" parameterType="String" resultMap="SysFriendUserResult">
+        select u.user_id as id,u.avatar,u.sign,u.`state` as status,u.user_name as username,u.phonenumber as phone from `sys_user` as u ,sys_friend as f where u.user_id=f.userid and f.groupid=#{typeid}
+    </select>
+
+    <select id="getSysFriendByByBelong" resultMap="SysFriendResult">
+        select id,groupid,userid,remark,timestamp,belong from sys_friend where belong=#{belong} and userid=#{userid}
+    </select>
+
+
+    <select id="findSysFriend" resultMap="SysFriendUserResult">
+        select u.user_id as id,u.avatar,u.sign,u.state as `status`,u.phonenumber as phone,u.user_name as username from `sys_user` as u where u.user_id !=#{userid} and u.user_id not in (select f.userid from sys_friend f where f.belong =#{userid})
+        <if test="condition!=null and condition!=''">
+          and (u.user_name like concat('%', #{condition}, '%') or u.phonenumber like concat('%', #{condition}, '%'))
+        </if>
+    </select>
+
+    <select id="findSysFriendByUserId" resultMap="SysFriendUserResult">
+        select u.user_id as id,u.avatar,u.sign,u.state as `status`,u.phonenumber as phone,u.user_name as username from `sys_user` as u where u.user_id !=#{userid} and u.user_id in (select f.userid from sys_friend f where f.belong =#{userid})
+    </select>
+
+    <update id="delSysFriend">
+        delete from sys_friend where userid=#{friendid} and belong=#{userid}
+    </update>
+
+    <update id="updateFriendRemark">
+        update sys_friend set remark=#{remark} where userid=#{friendid} and belong=#{userid}
+    </update>
+
+    <insert id="saveSysFriend" parameterType="SysFriend">
+        insert into sys_friend (
+        <if test="id != null and id != ''">id,</if>
+        <if test="groupid != null and groupid != ''">groupid,</if>
+        <if test="userid != null and userid != ''">userid,</if>
+        <if test="remark != null and remark != ''">remark,</if>
+        <if test="timestamp != null and timestamp != ''">`timestamp`,</if>
+        <if test="belong != null and belong != ''">belong</if>
+
+        ) values (
+        <if test="id != null and id != ''">#{id},</if>
+        <if test="groupid != null and groupid != ''">#{groupid},</if>
+        <if test="userid != null and userid != ''">#{userid},</if>
+        <if test="remark != null and remark != ''">#{remark},</if>
+        <if test="timestamp != null and timestamp != ''">#{timestamp},</if>
+        <if test="belong != null and belong != ''">#{belong}</if>
+        )
+    </insert>
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.easyim.system.mapper.SysNotifyMapper">
+
+    <resultMap type="SysNotify" id="SysNotifyResult">
+        <id     property="id"      column="id"                  />
+        <result property="from"    column="from"                />
+        <result property="to"     column="to"                   />
+        <result property="status"      column="status"          />
+        <result property="remark"      column="remark"          />
+        <result property="timestamp"      column="timestamp"    />
+        <result property="handleid"      column="handleid"    />
+        <result property="groupid"      column="groupid"    />
+    </resultMap>
+
+    <sql id="selectSysNotify">
+        select id, `type`, `from`, `to`,status,remark,`timestamp`,handlerid,groupid from sys_notify
+    </sql>
+
+
+    <select id="findSysNotify" resultMap="SysNotifyResult">
+        select id, `type`, `from`, `to`,status,remark,`timestamp`,handlerid,groupid from sys_notify
+        where `from` =#{from} and `to`=#{to} and groupid=#{groupid} and `type`=#{type}
+    </select>
+
+    <select id="findSysNotifyByHandlerId" resultMap="SysNotifyResult">
+        select id, `type`, `from`, `to`,status,remark,`timestamp`,handlerid,groupid from sys_notify
+        where `handlerid` =#{handlerid} and status = 1
+    </select>
+
+    <select id="getSysNotifyById" resultMap="SysNotifyResult">
+        select id, `type`, `from`, `to`,status,remark,`timestamp`,handlerid,groupid from sys_notify
+        where id =#{id}
+    </select>
+
+    <update id="updateSysNotifyStatus">
+        update sys_notify set `status`=#{status} where id=#{id}
+    </update>
+
+    <insert id="saveSysNotify" parameterType="SysNotify">
+        insert into sys_notify (
+        <if test="id != null and id != ''">id,</if>
+        <if test="type != null">`type`,</if>
+        <if test="from != null and from != ''">`from`,</if>
+        <if test="to != null and to != ''">`to`,</if>
+        <if test="status != null">status,</if>
+        <if test="remark != null">remark,</if>
+        <if test="timestamp != null">`timestamp`,</if>
+        <if test="handlerid != null">handlerid,</if>
+        <if test="groupid != null">groupid</if>
+        ) values (
+        <if test="id != null and id != ''">#{id},</if>
+        <if test="type != null">#{type},</if>
+        <if test="from != null and from != ''">#{from},</if>
+        <if test="to != null and to != ''">#{to},</if>
+        <if test="status != null">#{status},</if>
+        <if test="remark != null">#{remark},</if>
+        <if test="timestamp != null">#{timestamp},</if>
+        <if test="handlerid != null">#{handlerid},</if>
+        <if test="groupid != null">#{groupid}</if>
+        )
+    </insert>
+</mapper>
