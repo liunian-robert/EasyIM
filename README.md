@@ -46,9 +46,5 @@ EasyIM也借助了若依后台系统，在此基础上做了一些调整,希望�
 
 ## 演示图
 
-<table>
-    <tr>
-        ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/login.png)
-    </tr>
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/login.png)
     
-</table>
