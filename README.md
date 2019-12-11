@@ -51,4 +51,51 @@ EasyIM也借助了若依后台系统，在此基础上做了一些调整,希望�
   ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/register.png)
   
   ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/registersuccess.png)
-    
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/main.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/addfriend.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/allfriend.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/avatar.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/changeSkin.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/chat.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/deletemessage.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/findfriend.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/findgroup.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/friend.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/groupchat.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/groupchatjoin.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/groupmanage.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/groupmember.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/groupnew.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/insertcode.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/joingroup.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/message.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/message_input.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/offline_message.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/offlinemessage-group.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/offlinemessage.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/sessions.png)
+  
+  ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/typemanage.png)
