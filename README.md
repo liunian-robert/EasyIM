@@ -48,9 +48,7 @@ EasyIM也借助了若依后台系统，在此基础上做了一些调整,希望�
 
 <table>
     <tr>
-        <td><img src="https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/login.png"/></td>
-        <td><img src="https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/register.png"/></td>
-        <td><img src="https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/registersuccess.png"/></td>
+        ![image](https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/login.png)
     </tr>
     
 </table>
