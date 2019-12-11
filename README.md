@@ -45,3 +45,12 @@ EasyIM也借助了若依后台系统，在此基础上做了一些调整,希望�
 17. 连接池监视：监视当前系统数据库连接池状态，可进行分析SQL找出系统性能瓶颈。
 
 ## 演示图
+
+<table>
+    <tr>
+        <td><img src="https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/login.png"/></td>
+        <td><img src="https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/register.png"/></td>
+        <td><img src="https://github.com/liunian-robert/EasyIM/blob/master/demo-picture/registersuccess.png"/></td>
+    </tr>
+    
+</table>
